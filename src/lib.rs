@@ -34,21 +34,26 @@ impl JsResizeEventChannel {
     }
 
     pub fn try_recv_resized_event(&self) -> Option<PhysicalSize<u32>> {
-        #[cfg(target_arch = "wasm32")]
-        if let Ok(Some(())) = self.receiver.try_recv() {
-            let window = web_sys::window().unwrap();
-            macro_rules! to_f64_from_js_value {
-                ($size:expr) => {
-                    $size.unwrap().as_ref().as_f64().unwrap()
-                };
+        cfg_if! {
+            if #[cfg(target_arch = "wasm32")] {
+                if let Ok(Some(())) = self.receiver.try_recv() {
+                    let window = web_sys::window().unwrap();
+                    macro_rules! to_f64_from_js_value {
+                        ($size:expr) => {
+                            $size.unwrap().as_ref().as_f64().unwrap()
+                        };
+                    }
+                    let size = PhysicalSize::new(
+                        to_f64_from_js_value!(window.inner_width()) as u32 * 2,
+                        to_f64_from_js_value!(window.inner_height()) as u32 * 2,
+                    );
+                    Some(size)
+                } else {
+                    None
+                }
+            } else {
+                None
             }
-            let size = PhysicalSize::new(
-                to_f64_from_js_value!(window.inner_width()) as u32 * 2,
-                to_f64_from_js_value!(window.inner_height()) as u32 * 2,
-            );
-            Some(size)
-        } else {
-            None
         }
     }
 }
