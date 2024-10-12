@@ -1,0 +1,23 @@
+[package]
+name = "js_resized_event_channel"
+version = "0.1.0"
+edition = "2021"
+description = "js resized event channel"
+author = "Bruce0203 <brucefreedy@gmail.com>"
+repository = "https://github.com/Bruce0203/js_resized_event_channel"
+license = "MIT"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+winit = { version = "0.30.5", features = ["rwh_05"] }
+pollster = "0.3.0"
+kanal = "0.1.0-pre8"
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+wasm-bindgen = "0.2"
+wasm-bindgen-futures = "0.4.30"
+web-sys = { version = "0.3.70", features = [
+    "Window",
+]}
