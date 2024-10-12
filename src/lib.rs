@@ -1,29 +1,31 @@
-use cfg_if::cfg_if;
+#![cfg(target_arch = "wasm32")]
+
 use kanal::{AsyncReceiver, AsyncSender};
+use web_sys::{Element, HtmlCanvasElement};
 use winit::dpi::PhysicalSize;
 
 pub struct JsResizeEventChannel {
-    #[cfg(target_arch = "wasm32")]
     receiver: AsyncReceiver<()>,
-}
-
-macro_rules! js_value_to_u32 {
-    ($size:expr) => {
-        $size.unwrap().as_ref().as_f64().unwrap() as u32 * 2
-    };
+    canvas: HtmlCanvasElement,
 }
 
 impl JsResizeEventChannel {
-    pub fn init(window: &winit::window::Window) -> Self {
-        cfg_if! {
-            if #[cfg(target_arch = "wasm32")] {
-                let (sender, receiver) = kanal::unbounded_async();
-                Self::register_resize_event_to_js(sender);
-                Self::setup_canvas(window);
-                Self { receiver }
-            } else {
-                Self {}
-            }
+    pub fn init(window: &winit::window::Window, dst: Element) -> Self {
+        let (sender, receiver) = kanal::unbounded_async();
+        Self::register_resize_event_to_js(sender);
+        let canvas = Self::setup_canvas(window, dst);
+        Self { receiver, canvas }
+    }
+
+    pub fn try_recv_resized_event(&self) -> Option<PhysicalSize<u32>> {
+        if let Ok(Some(())) = self.receiver.try_recv() {
+            let size = PhysicalSize::new(
+                self.canvas.scroll_width() as u32,
+                self.canvas.scroll_height() as u32,
+            );
+            Some(size)
+        } else {
+            None
         }
     }
 
@@ -33,55 +35,24 @@ impl JsResizeEventChannel {
         }
     }
 
-    fn setup_canvas(window: &winit::window::Window) {
-        #[cfg(target_arch = "wasm32")]
-        {
-            let canvas = winit::platform::web::WindowExtWebSys::canvas(window).unwrap();
-            web_sys::window()
-                .and_then(|win| {
-                    let doc = win.document()?;
-                    let dst = doc.get_element_by_id("container")?;
-                    dst.append_child(&canvas).ok()?;
+    fn setup_canvas(window: &winit::window::Window, dst: Element) -> HtmlCanvasElement {
+        let canvas = winit::platform::web::WindowExtWebSys::canvas(window).unwrap();
+        dst.append_child(&canvas).expect("Cannot append canvas");
 
-                    std::hint::black_box(window.request_inner_size(winit::dpi::PhysicalSize::new(
-                        dst.scroll_width(),
-                        dst.scroll_height(),
-                    )));
-                    Some(())
-                })
-                .expect("Couldn't append canvas to document body.");
-        }
+        std::hint::black_box(window.request_inner_size(winit::dpi::PhysicalSize::new(
+            dst.scroll_width(),
+            dst.scroll_height(),
+        )));
+        canvas
     }
 
     fn register_resize_event_to_js(sender: AsyncSender<()>) {
-        #[cfg(target_arch = "wasm32")]
-        {
-            let f = wasm_bindgen::prelude::Closure::wrap(Box::new(move || {
-                pollster::block_on(sender.send(())).unwrap();
-            }) as Box<dyn FnMut()>);
-            web_sys::window()
-                .unwrap()
-                .set_onresize(Some(wasm_bindgen::JsCast::unchecked_ref(f.as_ref())));
-            f.forget();
-        }
-    }
-
-    fn try_recv_resized_event(&self) -> Option<PhysicalSize<u32>> {
-        cfg_if! {
-            if #[cfg(target_arch = "wasm32")] {
-                if let Ok(Some(())) = self.receiver.try_recv() {
-                    let window = web_sys::window().unwrap();
-                    let size = PhysicalSize::new(
-                        js_value_to_u32!(window.inner_width()),
-                        js_value_to_u32!(window.inner_height()),
-                    );
-                    Some(size)
-                } else {
-                    None
-                }
-            } else {
-                None
-            }
-        }
+        let f = wasm_bindgen::prelude::Closure::wrap(Box::new(move || {
+            pollster::block_on(sender.send(())).unwrap();
+        }) as Box<dyn FnMut()>);
+        web_sys::window()
+            .unwrap()
+            .set_onresize(Some(wasm_bindgen::JsCast::unchecked_ref(f.as_ref())));
+        f.forget();
     }
 }
