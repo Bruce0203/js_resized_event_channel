@@ -64,7 +64,7 @@ fn size_of_canvas(canvas: &HtmlCanvasElement) -> PhysicalSize<u32> {
 fn size_of_window() -> PhysicalSize<u32> {
     let window = web_sys::window().unwrap();
     PhysicalSize::new(
-        window.inner_width().unwrap().as_f64().unwrap() as u32,
-        window.inner_height().unwrap().as_f64().unwrap() as u32,
+        window.inner_width().unwrap().as_f64().unwrap() as u32 * 2,
+        window.inner_height().unwrap().as_f64().unwrap() as u32 * 2,
     )
 }

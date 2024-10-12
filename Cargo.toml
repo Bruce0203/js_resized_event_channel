@@ -1,6 +1,6 @@
 [package]
 name = "js_resized_event_channel"
-version = "0.1.6"
+version = "0.1.7"
 edition = "2021"
 description = "js resized event channel"
 author = "Bruce0203 <brucefreedy@gmail.com>"
