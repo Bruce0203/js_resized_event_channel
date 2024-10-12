@@ -39,17 +39,15 @@ impl JsResizeEventChannel {
         canvas
     }
 
-    fn register_resize_event_to_js(sender: AsyncSender<()>) {
+    fn register_resize_event_to_js(canvas: &HtmlCanvasElement, sender: AsyncSender<()>) {
         let f = wasm_bindgen::prelude::Closure::wrap(Box::new(move || {
             pollster::block_on(sender.send(())).unwrap();
         }) as Box<dyn FnMut()>);
-        web_sys::window()
-            .unwrap()
-            .set_onresize(Some(wasm_bindgen::JsCast::unchecked_ref(f.as_ref())));
+        canvas.set_onresize(Some(wasm_bindgen::JsCast::unchecked_ref(f.as_ref())));
         f.forget();
     }
 
-    fn size(&self) -> PhysicalSize<u32> {
+    pub fn size(&self) -> PhysicalSize<u32> {
         size_of_canvas(&self.canvas)
     }
 }
