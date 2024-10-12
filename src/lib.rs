@@ -48,7 +48,7 @@ impl JsResizeEventChannel {
     }
 
     pub fn size(&self) -> PhysicalSize<u32> {
-        size_of_canvas(&self.canvas)
+        size_of_window()
     }
 }
 
