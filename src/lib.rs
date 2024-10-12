@@ -1,7 +1,7 @@
 #![cfg(target_arch = "wasm32")]
 
 use kanal::{AsyncReceiver, AsyncSender};
-use web_sys::{Element, HtmlCanvasElement};
+use web_sys::Element;
 use winit::dpi::PhysicalSize;
 
 pub struct JsResizeEventChannel {
@@ -24,12 +24,6 @@ impl JsResizeEventChannel {
         }
     }
 
-    pub fn try_resize_event(&self, window: &winit::window::Window) {
-        if self.try_recv_resized_event() {
-            let _ = window.request_inner_size(self.size());
-        }
-    }
-
     fn setup_canvas(window: &winit::window::Window, dst: Element) {
         let canvas = winit::platform::web::WindowExtWebSys::canvas(window).unwrap();
         dst.append_child(&canvas).expect("Cannot append canvas");
@@ -49,13 +43,6 @@ impl JsResizeEventChannel {
     pub fn size(&self) -> PhysicalSize<u32> {
         size_of_window()
     }
-}
-
-fn size_of_canvas(canvas: &HtmlCanvasElement) -> PhysicalSize<u32> {
-    PhysicalSize::new(
-        canvas.scroll_width() as u32 * 2,
-        canvas.scroll_height() as u32 * 2,
-    )
 }
 
 fn size_of_window() -> PhysicalSize<u32> {

@@ -414,7 +414,7 @@ dependencies = [
 
 [[package]]
 name = "js_resized_event_channel"
-version = "0.1.8"
+version = "0.1.9"
 dependencies = [
  "cfg-if",
  "kanal",
