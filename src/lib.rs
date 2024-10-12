@@ -35,7 +35,7 @@ impl JsResizeEventChannel {
         let canvas = winit::platform::web::WindowExtWebSys::canvas(window).unwrap();
         dst.append_child(&canvas).expect("Cannot append canvas");
 
-        std::hint::black_box(window.request_inner_size(size_of_canvas(&canvas)));
+        let _ = window.request_inner_size(size_of_window());
         canvas
     }
 
@@ -58,5 +58,13 @@ fn size_of_canvas(canvas: &HtmlCanvasElement) -> PhysicalSize<u32> {
     PhysicalSize::new(
         canvas.scroll_width() as u32 * 2,
         canvas.scroll_height() as u32 * 2,
+    )
+}
+
+fn size_of_window() -> PhysicalSize<u32> {
+    let window = web_sys::window().unwrap();
+    PhysicalSize::new(
+        window.inner_width().unwrap().as_f64().unwrap() as u32,
+        window.inner_height().unwrap().as_f64().unwrap() as u32,
     )
 }
