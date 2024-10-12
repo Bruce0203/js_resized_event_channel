@@ -17,17 +17,17 @@ impl JsResizeEventChannel {
         Self { receiver, canvas }
     }
 
-    pub fn try_recv_resized_event(&self) -> Option<PhysicalSize<u32>> {
+    pub fn try_recv_resized_event(&self) -> bool {
         if let Ok(Some(())) = self.receiver.try_recv() {
-            Some(self.size())
+            true
         } else {
-            None
+            false
         }
     }
 
     pub fn try_resize_event(&self, window: &winit::window::Window) {
-        if let Some(size) = self.try_recv_resized_event() {
-            let _ = window.request_inner_size(size);
+        if self.try_recv_resized_event() {
+            let _ = window.request_inner_size(self.size());
         }
     }
 
