@@ -12,8 +12,8 @@ pub struct JsResizeEventChannel {
 impl JsResizeEventChannel {
     pub fn init(window: &winit::window::Window, dst: Element) -> Self {
         let (sender, receiver) = kanal::unbounded_async();
-        Self::register_resize_event_to_js(sender);
         let canvas = Self::setup_canvas(window, dst);
+        Self::register_resize_event_to_js(&canvas, sender);
         Self { receiver, canvas }
     }
 
