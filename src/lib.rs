@@ -7,9 +7,9 @@ pub struct JsResizeEventChannel {
     receiver: AsyncReceiver<()>,
 }
 
-macro_rules! to_f64_from_js_value {
+macro_rules! js_value_to_u32 {
     ($size:expr) => {
-        $size.unwrap().as_ref().as_f64().unwrap() as u32
+        $size.unwrap().as_ref().as_f64().unwrap() as u32 * 2
     };
 }
 
@@ -18,7 +18,7 @@ impl JsResizeEventChannel {
         cfg_if! {
             if #[cfg(target_arch = "wasm32")] {
                 let (sender, receiver) = kanal::unbounded_async();
-                Self::register_resize_event_from_js(sender);
+                Self::register_resize_event_to_js(sender);
                 Self::setup_canvas(window);
                 Self { receiver }
             } else {
@@ -43,8 +43,8 @@ impl JsResizeEventChannel {
                     let dst = doc.get_element_by_id("container")?;
                     dst.append_child(&canvas).ok()?;
                     std::hint::black_box(window.request_inner_size(winit::dpi::PhysicalSize::new(
-                        to_f64_from_js_value!(win.inner_width()),
-                        to_f64_from_js_value!(win.inner_height()),
+                        js_value_to_u32!(win.inner_width()),
+                        js_value_to_u32!(win.inner_height()),
                     )));
                     Some(())
                 })
@@ -52,7 +52,7 @@ impl JsResizeEventChannel {
         }
     }
 
-    fn register_resize_event_from_js(sender: AsyncSender<()>) {
+    fn register_resize_event_to_js(sender: AsyncSender<()>) {
         #[cfg(target_arch = "wasm32")]
         {
             let f = wasm_bindgen::prelude::Closure::wrap(Box::new(move || {
@@ -71,8 +71,8 @@ impl JsResizeEventChannel {
                 if let Ok(Some(())) = self.receiver.try_recv() {
                     let window = web_sys::window().unwrap();
                     let size = PhysicalSize::new(
-                        to_f64_from_js_value!(window.inner_width()) * 2,
-                        to_f64_from_js_value!(window.inner_height()) * 2,
+                        js_value_to_u32!(window.inner_width()),
+                        js_value_to_u32!(window.inner_height()),
                     );
                     Some(size)
                 } else {
