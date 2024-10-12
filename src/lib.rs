@@ -42,9 +42,10 @@ impl JsResizeEventChannel {
                     let doc = win.document()?;
                     let dst = doc.get_element_by_id("container")?;
                     dst.append_child(&canvas).ok()?;
+
                     std::hint::black_box(window.request_inner_size(winit::dpi::PhysicalSize::new(
-                        js_value_to_u32!(win.inner_width()),
-                        js_value_to_u32!(win.inner_height()),
+                        dst.scroll_width(),
+                        dst.scroll_height(),
                     )));
                     Some(())
                 })
