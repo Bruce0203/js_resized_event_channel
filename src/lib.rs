@@ -19,11 +19,7 @@ impl JsResizeEventChannel {
 
     pub fn try_recv_resized_event(&self) -> Option<PhysicalSize<u32>> {
         if let Ok(Some(())) = self.receiver.try_recv() {
-            let size = PhysicalSize::new(
-                self.canvas.scroll_width() as u32,
-                self.canvas.scroll_height() as u32,
-            );
-            Some(size)
+            Some(self.size())
         } else {
             None
         }
@@ -39,10 +35,7 @@ impl JsResizeEventChannel {
         let canvas = winit::platform::web::WindowExtWebSys::canvas(window).unwrap();
         dst.append_child(&canvas).expect("Cannot append canvas");
 
-        std::hint::black_box(window.request_inner_size(winit::dpi::PhysicalSize::new(
-            dst.scroll_width(),
-            dst.scroll_height(),
-        )));
+        std::hint::black_box(window.request_inner_size(size_of_canvas(&canvas)));
         canvas
     }
 
@@ -55,4 +48,15 @@ impl JsResizeEventChannel {
             .set_onresize(Some(wasm_bindgen::JsCast::unchecked_ref(f.as_ref())));
         f.forget();
     }
+
+    fn size(&self) -> PhysicalSize<u32> {
+        size_of_canvas(&self.canvas)
+    }
+}
+
+fn size_of_canvas(canvas: &HtmlCanvasElement) -> PhysicalSize<u32> {
+    PhysicalSize::new(
+        canvas.scroll_width() as u32 * 2,
+        canvas.scroll_height() as u32 * 2,
+    )
 }
