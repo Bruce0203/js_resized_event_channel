@@ -1,4 +1,3 @@
-use kanal::{AsyncReceiver, AsyncSender};
 use winit::dpi::PhysicalSize;
 
 ///```rust
@@ -24,7 +23,7 @@ use winit::dpi::PhysicalSize;
 ///```
 pub struct JsResizeEventChannel {
     #[cfg(target_arch = "wasm32")]
-    receiver: AsyncReceiver<()>,
+    receiver: kanal::AsyncReceiver<()>,
 }
 
 pub trait ResizeEventChannel {
@@ -82,7 +81,7 @@ impl JsResizeEventChannel {
         let _ = window.request_inner_size(Self::size_of_window());
     }
 
-    fn register_resize_event_to_js(sender: AsyncSender<()>) {
+    fn register_resize_event_to_js(sender: kanal::AsyncSender<()>) {
         let f = wasm_bindgen::prelude::Closure::wrap(Box::new(move || {
             pollster::block_on(sender.send(())).unwrap();
         }) as Box<dyn FnMut()>);
