@@ -79,11 +79,16 @@ impl JsResizeEventChannel {
             let entry: ResizeObserverEntry = entry.dyn_into().unwrap();
             let size: ResizeObserverSize = entry.content_box_size().at(0).dyn_into().unwrap();
             let size = PhysicalSize::new(size.inline_size(), size.block_size());
-            let canvas = entry.target();
-            let width = size.width.to_string();
-            let height = size.height.to_string();
-            canvas.set_attribute("width", width.as_str()).unwrap();
-            canvas.set_attribute("height", height.as_str()).unwrap();
+            {
+                let mut size = size.clone();
+                size.width *= 2.;
+                size.height *= 2.;
+                let canvas = entry.target();
+                let width = size.width.to_string();
+                let height = size.height.to_string();
+                canvas.set_attribute("width", width.as_str()).unwrap();
+                canvas.set_attribute("height", height.as_str()).unwrap();
+            }
             pollster::block_on(sender.send(size)).unwrap();
         });
         let resize_observer = ResizeObserver::new(on_resize.as_ref().unchecked_ref()).unwrap();
