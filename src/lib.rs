@@ -73,7 +73,6 @@ impl JsResizeEventChannel {
     fn setup_canvas(window: &winit::window::Window) {
         let canvas = winit::platform::web::WindowExtWebSys::canvas(window).unwrap();
         Self::get_element_of_screen().append_child(&canvas).unwrap();
-        let _ = window.request_inner_size(Self::size_of_window());
     }
 
     fn register_resize_event_to_js(sender: kanal::AsyncSender<PhysicalSize<u32>>) {
@@ -81,7 +80,9 @@ impl JsResizeEventChannel {
             let entry = entries.at(0);
             let entry: ResizeObserverEntry = entry.dyn_into().unwrap();
             let size: ResizeObserverSize = entry.content_box_size().at(0).dyn_into().unwrap();
-            let size = PhysicalSize::new(size.inline_size() as u32, size.block_size() as u32);
+            let mut size = PhysicalSize::new(size.inline_size() as u32, size.block_size() as u32);
+            size.width *= 2;
+            size.height *= 2;
             let canvas = entry.target();
             let width = size.width.to_string();
             let height = size.height.to_string();
@@ -97,13 +98,5 @@ impl JsResizeEventChannel {
     fn get_element_of_screen() -> web_sys::Element {
         let document = web_sys::window().unwrap().document().unwrap();
         document.get_element_by_id("screen").unwrap()
-    }
-
-    fn size_of_window() -> PhysicalSize<u32> {
-        let window = web_sys::window().unwrap();
-        PhysicalSize::new(
-            window.inner_width().unwrap().as_f64().unwrap() as u32 * 2,
-            window.inner_height().unwrap().as_f64().unwrap() as u32 * 2,
-        )
     }
 }
