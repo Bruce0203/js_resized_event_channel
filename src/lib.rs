@@ -28,8 +28,7 @@ pub struct JsResizeEventChannel {
 
 pub trait ResizeEventChannel {
     fn init(window: &winit::window::Window) -> Self;
-    fn try_recv_resized_event(&self) -> bool;
-    fn size(&self) -> PhysicalSize<u32>;
+    fn try_recv_resized_event(&self) -> Option<PhysicalSize<u32>>;
 }
 
 #[cfg(not(target_arch = "wasm32"))]
@@ -56,16 +55,12 @@ impl ResizeEventChannel for JsResizeEventChannel {
         Self { receiver }
     }
 
-    fn try_recv_resized_event(&self) -> bool {
+    fn try_recv_resized_event(&self) -> Option<PhysicalSize<u32>> {
         if let Ok(Some(())) = self.receiver.try_recv() {
-            true
+            Some(Self::size_of_window())
         } else {
-            false
+            None
         }
-    }
-
-    fn size(&self) -> PhysicalSize<u32> {
-        Self::size_of_window()
     }
 }
 
