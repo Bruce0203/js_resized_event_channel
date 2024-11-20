@@ -81,7 +81,7 @@ impl JsResizeEventChannel {
             let entry = entries.at(0);
             let entry: ResizeObserverEntry = entry.dyn_into().unwrap();
             let size: ResizeObserverSize = entry.content_box_size().at(0).dyn_into().unwrap();
-            let size = PhysicalSize::new(size.block_size() as u32, size.inline_size() as u32);
+            let size = PhysicalSize::new(size.inline_size() as u32, size.block_size() as u32);
             let canvas = entry.target();
             let width = size.width.to_string();
             let height = size.height.to_string();
