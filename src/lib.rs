@@ -1,4 +1,5 @@
-use web_sys::ResizeObserver;
+use wasm_bindgen::{prelude::Closure, JsCast};
+use web_sys::{js_sys::Array, ResizeObserver, ResizeObserverEntry, ResizeObserverSize};
 use winit::dpi::PhysicalSize;
 
 ///```rust
@@ -24,7 +25,7 @@ use winit::dpi::PhysicalSize;
 ///```
 pub struct JsResizeEventChannel {
     #[cfg(target_arch = "wasm32")]
-    receiver: kanal::AsyncReceiver<()>,
+    receiver: kanal::AsyncReceiver<PhysicalSize<u32>>,
 }
 
 pub trait ResizeEventChannel {
@@ -57,8 +58,8 @@ impl ResizeEventChannel for JsResizeEventChannel {
     }
 
     fn try_recv_resized_event(&self) -> Option<PhysicalSize<u32>> {
-        if let Ok(Some(())) = self.receiver.try_recv() {
-            Some(Self::size_of_window())
+        if let Ok(Some(size)) = self.receiver.try_recv() {
+            Some(size)
         } else {
             None
         }
@@ -73,14 +74,17 @@ impl JsResizeEventChannel {
         let _ = window.request_inner_size(Self::size_of_window());
     }
 
-    fn register_resize_event_to_js(sender: kanal::AsyncSender<()>) {
-        let c = wasm_bindgen::prelude::Closure::wrap(Box::new(move || {
-            pollster::block_on(sender.send(())).unwrap();
-        }) as Box<dyn FnMut()>);
-        let f = wasm_bindgen::JsCast::unchecked_ref(c.as_ref());
-        let obs = ResizeObserver::new(f).unwrap();
-        obs.observe(&Self::get_element_of_screen());
-        c.forget();
+    fn register_resize_event_to_js(sender: kanal::AsyncSender<PhysicalSize<u32>>) {
+        let on_resize = Closure::<dyn FnMut(Array)>::new(move |entries: Array| {
+            let entry = entries.at(0);
+            let entry: ResizeObserverEntry = entry.dyn_into().unwrap();
+            let size: ResizeObserverSize = entry.content_box_size().at(0).dyn_into().unwrap();
+            let size = PhysicalSize::new(size.block_size() as u32, size.inline_size() as u32);
+            pollster::block_on(sender.send(size)).unwrap();
+        });
+        let resize_observer = ResizeObserver::new(on_resize.as_ref().unchecked_ref()).unwrap();
+        resize_observer.observe(&Self::get_element_of_screen());
+        on_resize.forget();
     }
 
     fn get_element_of_screen() -> web_sys::Element {
