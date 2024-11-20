@@ -4,6 +4,8 @@ use web_sys::{
 };
 use winit::dpi::PhysicalSize;
 
+type Size = PhysicalSize<f64>;
+
 ///```rust
 ///fn test() {
 /// use js_resized_event_channel::{JsResizeEventChannel, ResizeEventChannel};
@@ -27,12 +29,12 @@ use winit::dpi::PhysicalSize;
 ///```
 pub struct JsResizeEventChannel {
     #[cfg(target_arch = "wasm32")]
-    receiver: kanal::AsyncReceiver<PhysicalSize<u32>>,
+    receiver: kanal::AsyncReceiver<Size>,
 }
 
 pub trait ResizeEventChannel {
     fn init(window: &winit::window::Window) -> Self;
-    fn try_recv_resized_event(&self) -> Option<PhysicalSize<u32>>;
+    fn try_recv_resized_event(&self) -> Option<Size>;
 }
 
 #[cfg(not(target_arch = "wasm32"))]
@@ -43,10 +45,6 @@ impl ResizeEventChannel for JsResizeEventChannel {
 
     fn try_recv_resized_event(&self) -> bool {
         false
-    }
-
-    fn size(&self) -> PhysicalSize<u32> {
-        unreachable!()
     }
 }
 
@@ -59,7 +57,7 @@ impl ResizeEventChannel for JsResizeEventChannel {
         Self { receiver }
     }
 
-    fn try_recv_resized_event(&self) -> Option<PhysicalSize<u32>> {
+    fn try_recv_resized_event(&self) -> Option<Size> {
         if let Ok(Some(size)) = self.receiver.try_recv() {
             Some(size)
         } else {
@@ -75,14 +73,14 @@ impl JsResizeEventChannel {
         Self::get_element_of_screen().append_child(&canvas).unwrap();
     }
 
-    fn register_resize_event_to_js(sender: kanal::AsyncSender<PhysicalSize<u32>>) {
+    fn register_resize_event_to_js(sender: kanal::AsyncSender<Size>) {
         let on_resize = Closure::<dyn FnMut(Array)>::new(move |entries: Array| {
             let entry = entries.at(0);
             let entry: ResizeObserverEntry = entry.dyn_into().unwrap();
             let size: ResizeObserverSize = entry.content_box_size().at(0).dyn_into().unwrap();
-            let mut size = PhysicalSize::new(size.inline_size() as u32, size.block_size() as u32);
-            size.width *= 2;
-            size.height *= 2;
+            let mut size = PhysicalSize::new(size.inline_size(), size.block_size());
+            size.width *= 2.;
+            size.height *= 2.;
             let canvas = entry.target();
             let width = size.width.to_string();
             let height = size.height.to_string();

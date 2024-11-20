@@ -1,6 +1,6 @@
 [package]
 name = "js_resized_event_channel"
-version = "0.3.11"
+version = "0.3.12"
 edition = "2021"
 description = "js resized event channel (only supports full size window)"
 author = "Bruce0203 <brucefreedy@gmail.com>"
