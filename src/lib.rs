@@ -75,6 +75,7 @@ impl JsResizeEventChannel {
         let canvas = winit::platform::web::WindowExtWebSys::canvas(window).unwrap();
         let document = web_sys::window().unwrap().document().unwrap();
         document
+            .get_root_node()
             .append_child(&canvas)
             .expect("Cannot append canvas");
 
