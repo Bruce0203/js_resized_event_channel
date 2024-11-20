@@ -1,3 +1,4 @@
+use web_sys::ResizeObserver;
 use winit::dpi::PhysicalSize;
 
 ///```rust
@@ -13,8 +14,8 @@ use winit::dpi::PhysicalSize;
 ///     let resize_event_channel = JsResizeEventChannel::init(&window);
 ///     event_loop
 ///         .run(|event, event_loop| {
-///             if resize_event_channel.try_recv_resized_event() {
-///                 let _ = window.request_inner_size(resize_event_channel.size());
+///             if let Some(size) = resize_event_channel.try_recv_resized_event() {
+///                 let _ = window.request_inner_size(size);
 ///             }
 ///         })
 ///         .unwrap();
@@ -75,12 +76,12 @@ impl JsResizeEventChannel {
     }
 
     fn register_resize_event_to_js(sender: kanal::AsyncSender<()>) {
-        let f = wasm_bindgen::prelude::Closure::wrap(Box::new(move || {
+        let c = wasm_bindgen::prelude::Closure::wrap(Box::new(move || {
             pollster::block_on(sender.send(())).unwrap();
         }) as Box<dyn FnMut()>);
-        let window = web_sys::window().unwrap();
-        window.set_onresize(Some(wasm_bindgen::JsCast::unchecked_ref(f.as_ref())));
-        f.forget();
+        let f = wasm_bindgen::JsCast::unchecked_ref(c.as_ref());
+        let _obs = ResizeObserver::new(f).unwrap();
+        c.forget();
     }
 
     fn size_of_window() -> PhysicalSize<u32> {
