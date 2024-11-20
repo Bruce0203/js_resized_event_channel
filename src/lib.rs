@@ -69,9 +69,7 @@ impl ResizeEventChannel for JsResizeEventChannel {
 impl JsResizeEventChannel {
     fn setup_canvas(window: &winit::window::Window) {
         let canvas = winit::platform::web::WindowExtWebSys::canvas(window).unwrap();
-        let document = web_sys::window().unwrap().document().unwrap();
-        let screen = document.get_element_by_id("screen").unwrap();
-        screen.append_child(&canvas).unwrap();
+        Self::get_element_of_screen().append_child(&canvas).unwrap();
         let _ = window.request_inner_size(Self::size_of_window());
     }
 
@@ -80,8 +78,14 @@ impl JsResizeEventChannel {
             pollster::block_on(sender.send(())).unwrap();
         }) as Box<dyn FnMut()>);
         let f = wasm_bindgen::JsCast::unchecked_ref(c.as_ref());
-        let _obs = ResizeObserver::new(f).unwrap();
+        let obs = ResizeObserver::new(f).unwrap();
+        obs.observe(&Self::get_element_of_screen());
         c.forget();
+    }
+
+    fn get_element_of_screen() -> web_sys::Element {
+        let document = web_sys::window().unwrap().document().unwrap();
+        document.get_element_by_id("screen").unwrap()
     }
 
     fn size_of_window() -> PhysicalSize<u32> {
