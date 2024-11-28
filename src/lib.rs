@@ -1,7 +1,3 @@
-use wasm_bindgen::{prelude::Closure, JsCast};
-use web_sys::{
-    js_sys::Array, HtmlElement, ResizeObserver, ResizeObserverEntry, ResizeObserverSize,
-};
 use winit::dpi::PhysicalSize;
 
 type Size = PhysicalSize<f64>;
@@ -43,8 +39,8 @@ impl ResizeEventChannel for JsResizeEventChannel {
         JsResizeEventChannel {}
     }
 
-    fn try_recv_resized_event(&self) -> bool {
-        false
+    fn try_recv_resized_event(&self) -> Option<PhysicalSize<f64>> {
+        None
     }
 }
 
@@ -74,24 +70,29 @@ impl JsResizeEventChannel {
     }
 
     fn register_resize_event_to_js(sender: kanal::AsyncSender<Size>) {
-        let on_resize = Closure::<dyn FnMut(Array)>::new(move |entries: Array| {
-            let entry = entries.at(0);
-            let entry: ResizeObserverEntry = entry.dyn_into().unwrap();
-            let size: ResizeObserverSize = entry.content_box_size().at(0).dyn_into().unwrap();
-            let size = PhysicalSize::new(size.inline_size(), size.block_size());
-            {
-                let mut size = size.clone();
+        let on_resize = wasm_bindgen::prelude::Closure::<dyn FnMut(web_sys::js_sys::Array)>::new(
+            move |entries: web_sys::js_sys::Array| {
+                let entry = entries.at(0);
+                let entry: web_sys::ResizeObserverEntry =
+                    wasm_bindgen::JsCast::dyn_into(entry).unwrap();
+                let size: web_sys::ResizeObserverSize =
+                    wasm_bindgen::JsCast::dyn_into(entry.content_box_size().at(0)).unwrap();
+                let mut size = PhysicalSize::new(size.inline_size(), size.block_size());
                 size.width *= 2.;
                 size.height *= 2.;
                 let canvas = entry.target();
                 let width = size.width.to_string();
                 let height = size.height.to_string();
+                log::info!("setting canvas's attributes of size");
                 canvas.set_attribute("width", width.as_str()).unwrap();
                 canvas.set_attribute("height", height.as_str()).unwrap();
-            }
-            pollster::block_on(sender.send(size)).unwrap();
-        });
-        let resize_observer = ResizeObserver::new(on_resize.as_ref().unchecked_ref()).unwrap();
+                log::info!("setting canvas's attributes of size done");
+                pollster::block_on(sender.send(size)).unwrap();
+            },
+        );
+        let resize_observer =
+            web_sys::ResizeObserver::new(wasm_bindgen::JsCast::unchecked_ref(on_resize.as_ref()))
+                .unwrap();
         resize_observer.observe(&Self::get_element_of_screen());
         on_resize.forget();
     }

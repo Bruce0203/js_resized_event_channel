@@ -15,6 +15,7 @@ winit = { version = "0.30.5", features = ["rwh_05"] }
 pollster = "0.3.0"
 kanal = "0.1.0-pre8"
 cfg-if = "1.0.0"
+log = "0.4.22"
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 wasm-bindgen = "0.2"
