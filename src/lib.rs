@@ -83,10 +83,6 @@ impl JsResizeEventChannel {
                 let canvas = entry.target();
                 let width = size.width.to_string();
                 let height = size.height.to_string();
-                log::info!("setting canvas's attributes of size");
-                canvas.set_attribute("width", width.as_str()).unwrap();
-                canvas.set_attribute("height", height.as_str()).unwrap();
-                log::info!("setting canvas's attributes of size done");
                 pollster::block_on(sender.send(size)).unwrap();
             },
         );
